@@ -34,25 +34,38 @@ use std::convert::TryFrom;
 
 use std::os::raw::*;
 
-use ::libz_sys::*;
+// pick the zlib backend at compile time: zlib-rs (pure Rust, faster +
+// memory-safe) wins over the system C zlib when both features are on.
+// the two crates expose the same C-style API, so the rest of this file
+// stays identical regardless of choice
+#[cfg(feature = "zlib-rs")]
+use libz_rs_sys as zlib;
+#[cfg(all(feature = "zlib", not(feature = "zlib-rs")))]
+use libz_sys as zlib;
+#[cfg(not(any(feature = "zlib", feature = "zlib-rs")))]
+compile_error!("mtpng needs a zlib backend: enable feature `zlib` (system zlib) or `zlib-rs` (pure-Rust)");
+
+use self::zlib::*;
 
 use super::utils::*;
 
 pub fn adler32(sum: u32, bytes: &[u8]) -> u32 {
     unsafe {
-        ::libz_sys::adler32(c_ulong::from(sum), &bytes[0], bytes.len() as c_uint) as u32
+        zlib::adler32(c_ulong::from(sum), &bytes[0], bytes.len() as c_uint) as u32
     }
 }
 
 pub fn adler32_initial() -> u32 {
     unsafe {
-        ::libz_sys::adler32(0, ptr::null(), 0) as u32
+        zlib::adler32(0, ptr::null(), 0) as u32
     }
 }
 
 pub fn adler32_combine(sum_a: u32, sum_b: u32, len_b: usize) -> u32 {
+    // libz-rs-sys marks this safe; suppress the wrapper-unsafe warning there
+    #[allow(unused_unsafe)]
     unsafe {
-        ::libz_sys::adler32_combine(c_ulong::from(sum_a), c_ulong::from(sum_b), len_b as c_long) as u32
+        zlib::adler32_combine(c_ulong::from(sum_a), c_ulong::from(sum_b), len_b as c_long) as u32
     }
 }
 

@@ -23,11 +23,30 @@
 // THE SOFTWARE.
 //
 
+#[cfg(not(feature = "crc32fast"))]
 use crc::crc32;
+#[cfg(not(feature = "crc32fast"))]
 use crc::Hasher32;
 
 use std::io;
 use std::io::Write;
+
+// crc-digest abstraction so the chunk writer doesn't carry per-backend
+// branching. both impls emit the same PNG CRC-32 (deterministic)
+#[cfg(not(feature = "crc32fast"))]
+fn crc32_chunk(tag: &[u8], data: &[u8]) -> u32 {
+    let mut digest = crc32::Digest::new(crc32::IEEE);
+    digest.write(tag);
+    digest.write(data);
+    digest.sum32()
+}
+#[cfg(feature = "crc32fast")]
+fn crc32_chunk(tag: &[u8], data: &[u8]) -> u32 {
+    let mut hasher = crc32fast::Hasher::new();
+    hasher.update(tag);
+    hasher.update(data);
+    hasher.finalize()
+}
 
 use super::Header;
 
@@ -102,10 +121,7 @@ impl<W: Write> Writer<W> {
         }
 
         // CRC covers both tag and data.
-        let mut digest = crc32::Digest::new(crc32::IEEE);
-        digest.write(tag);
-        digest.write(data);
-        let checksum = digest.sum32();
+        let checksum = crc32_chunk(tag, data);
 
         // Write data...
         self.write_be32(data.len() as u32)?;

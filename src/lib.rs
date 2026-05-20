@@ -27,8 +27,19 @@
 
 extern crate rayon;
 extern crate crc;
-extern crate libz_sys;
 #[macro_use] extern crate itertools;
+
+// optional CRC backend: hardware-accelerated crc32fast (SSE4.2 + PCLMULQDQ)
+// when the `crc32fast` feature is on, otherwise fall back to the `crc` crate
+#[cfg(feature = "crc32fast")]
+extern crate crc32fast;
+
+// optional zlib backend: prefer the pure-Rust zlib-rs when its feature is
+// on (~2-2.5x faster, memory-safe); otherwise the system C zlib via libz-sys
+#[cfg(feature = "zlib-rs")]
+extern crate libz_rs_sys;
+#[cfg(all(feature = "zlib", not(feature = "zlib-rs")))]
+extern crate libz_sys;
 
 #[cfg(feature="capi")]
 extern crate libc;
