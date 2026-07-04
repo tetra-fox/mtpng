@@ -1,6 +1,6 @@
 [package]
 name = "mtpng"
-version = "0.4.1"
+version = "0.5.0"
 authors = ["Brooke Vibber <bvibber@pobox.com>"]
 license = "MIT"
 description = "Multithreaded PNG encoder library"
@@ -9,6 +9,7 @@ homepage = "https://github.com/bvibber/mtpng"
 repository = "https://github.com/bvibber/mtpng.git"
 keywords = ["png", "multithreaded", "threaded", "parallel"]
 categories = ["multimedia::images"]
+edition = "2024"
 
 [features]
 
@@ -16,8 +17,10 @@ categories = ["multimedia::images"]
 # alternatives explicitly so this fork stays a strict superset
 default=["zlib"]
 
-# use libz-sys (system zlib, C). default-on for upstream parity
-zlib=["dep:libz-sys"]
+# select the system C zlib (libz-sys) as the deflate backend. libz-sys is
+# always a hard dependency (upstream parity), so this is just the selector
+# flag, not a dep gate. default-on
+zlib=[]
 
 # use libz-rs-sys (zlib-rs, pure-Rust zlib API). ~2-2.5x faster and
 # memory-safe. when both `zlib` and `zlib-rs` are enabled, `zlib-rs`
@@ -36,25 +39,26 @@ cli=["png", "clap", "time"]
 capi=["libc"]
 
 [[bin]]
-name="mtpng"
-path="src/bin/mtpng.rs"
+name="mtpngenc"
+path="src/bin/mtpngenc.rs"
 required-features=["cli"]
 
 [dependencies]
 rayon = "1.5.0"
 crc = "1.8.1"
+libz-sys = "1.1.29"
 itertools = "0.10.0"
 
 # implied deps for cli
-png = { version = "0.17.5", optional = true }
+png = { version = "0.18.1", optional = true }
 clap = { version = "3.1.12", optional = true }
-time = { version = "0.3.9", optional = true }
+time = { version = "0.3.47", optional = true }
 
 # implied deps for capi
-libc = { version = "0.2.43", optional = true }
+libc = { version = "0.2.186", optional = true }
 
-# feature-gated optimizations (see [features] above)
-libz-sys = { version = "1.0.23", optional = true }
+# optional backends selected by the `zlib-rs` / `crc32fast` features (see
+# [features] above). libz-sys is a hard dep, declared with the other deps
 libz-rs-sys = { version = "0.4", optional = true }
 crc32fast = { version = "1.5", optional = true }
 

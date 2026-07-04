@@ -1,8 +1,8 @@
 //
 // mtpng - a multithreaded parallel PNG encoder in Rust
-// mtpng.rs - CLI utility for testing and Rust API example
+// mtpngenc.rs - CLI utility for testing and Rust API example
 //
-// Copyright (c) 2018-2024 Brooke Vibber
+// Copyright (c) 2018-2026 Brooke Vibber
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io;
-use std::io::{Error, ErrorKind, Write};
+use std::io::{BufReader, Error, ErrorKind, Write};
 
 // CLI options
 extern crate clap;
@@ -75,7 +75,7 @@ fn read_png(filename: &str)
     use png::Decoder;
     use png::Transformations;
 
-    let mut decoder = Decoder::new(File::open(filename)?);
+    let mut decoder = Decoder::new(BufReader::new(File::open(filename)?));
     decoder.set_transformations(Transformations::IDENTITY);
 
     let mut reader = decoder.read_info()?;
@@ -95,7 +95,7 @@ fn read_png(filename: &str)
         None => None,
     };
 
-    let mut data = vec![0u8; reader.output_buffer_size()];
+    let mut data = vec![0u8; reader.output_buffer_size().unwrap()];
     reader.next_frame(&mut data)?;
 
     Ok(Image {
